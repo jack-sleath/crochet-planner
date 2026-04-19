@@ -329,6 +329,13 @@ body {
   cursor: not-allowed;
 }
 
+.palette-active-note {
+  font-size: 0.8rem;
+  color: var(--brown);
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
 .colour-input {
   width: 2.5rem;
   height: 2.5rem;
