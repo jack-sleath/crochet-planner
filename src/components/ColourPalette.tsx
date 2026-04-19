@@ -1,6 +1,10 @@
 import { useState } from 'react'
-import { useLocalStorage } from '../hooks/useLocalStorage'
 import { CameraColourPicker } from './CameraColourPicker'
+
+interface Props {
+  palette: string[]
+  onPaletteChange: (palette: string[]) => void
+}
 
 function parseHex(value: string): string | null {
   const cleaned = value.trim().replace(/^#/, '')
@@ -12,8 +16,7 @@ function parseHex(value: string): string | null {
   return null
 }
 
-export function ColourPalette() {
-  const [palette, setPalette] = useLocalStorage<string[]>('crochet-palette', [])
+export function ColourPalette({ palette, onPaletteChange }: Props) {
   const [picked, setPicked] = useState('#7c6b4a')
   const [hexInput, setHexInput] = useState('#7c6b4a')
   const [hexValid, setHexValid] = useState(true)
@@ -38,12 +41,12 @@ export function ColourPalette() {
 
   function addColour() {
     if (hexValid && !palette.includes(picked)) {
-      setPalette([...palette, picked])
+      onPaletteChange([...palette, picked])
     }
   }
 
   function removeColour(hex: string) {
-    setPalette(palette.filter((c) => c !== hex))
+    onPaletteChange(palette.filter((c) => c !== hex))
   }
 
   return (

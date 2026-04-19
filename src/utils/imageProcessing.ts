@@ -1,5 +1,13 @@
 type RGB = [number, number, number]
 
+function hexToRgb(hex: string): RGB {
+  return [
+    parseInt(hex.slice(1, 3), 16),
+    parseInt(hex.slice(3, 5), 16),
+    parseInt(hex.slice(5, 7), 16),
+  ]
+}
+
 function colorDist(a: RGB, b: RGB): number {
   return (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2
 }
@@ -65,6 +73,7 @@ export function processImage(
   cols: number,
   rows: number,
   maxColors: number,
+  userPalette: string[] = [],
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image()
@@ -85,7 +94,10 @@ export function processImage(
         pixels.push([data[i], data[i + 1], data[i + 2]])
       }
 
-      const palette = kMeans(pixels, maxColors)
+      // Use the user's saved palette directly if they have one, otherwise run k-means
+      const palette = userPalette.length > 0
+        ? userPalette.map(hexToRgb)
+        : kMeans(pixels, maxColors)
 
       // Map each pixel to its nearest palette colour and store as hex
       const hexGrid: string[] = pixels.map(p => {
