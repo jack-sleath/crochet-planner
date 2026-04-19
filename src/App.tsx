@@ -7,20 +7,34 @@ import './index.css'
 
 export function App() {
   const [imageUrl, setImageUrl] = useState<string | null>(null)
-  const [rows, setRows] = useState(10)
-  const [cols, setCols] = useState(10)
+  const [aspectRatio, setAspectRatio] = useState<number | null>(null) // width / height
+  const [gridSize, setGridSize] = useState(20) // controls cols; rows derived from aspect ratio
   const [maxColors, setMaxColors] = useState(8)
   const [gridVisible, setGridVisible] = useState(true)
   const [processedUrl, setProcessedUrl] = useState<string | null>(null)
 
+  const cols = gridSize
+  const rows = aspectRatio
+    ? Math.min(250, Math.max(5, Math.round(gridSize / aspectRatio)))
+    : gridSize
+
+  // Detect aspect ratio whenever a new image is loaded
   useEffect(() => {
-    if (!imageUrl) { setProcessedUrl(null); return }
+    if (!imageUrl) { setAspectRatio(null); setProcessedUrl(null); return }
+    const img = new Image()
+    img.onload = () => setAspectRatio(img.naturalWidth / img.naturalHeight)
+    img.src = imageUrl
+  }, [imageUrl])
+
+  // Process image only once aspect ratio is known (avoids a wasted run with wrong dimensions)
+  useEffect(() => {
+    if (!imageUrl || aspectRatio === null) { setProcessedUrl(null); return }
     let cancelled = false
     processImage(imageUrl, cols, rows, maxColors)
       .then((url) => { if (!cancelled) setProcessedUrl(url) })
       .catch(() => {})
     return () => { cancelled = true }
-  }, [imageUrl, cols, rows, maxColors])
+  }, [imageUrl, aspectRatio, cols, rows, maxColors])
 
   return (
     <div className="app">
@@ -39,30 +53,16 @@ export function App() {
               <h2>Grid</h2>
               <label className="field-label">
                 <span className="field-label-header">
-                  Rows <span className="field-value">{rows}</span>
+                  Grid size <span className="field-value">{cols} × {rows}</span>
                 </span>
                 <input
                   type="range"
                   min={5}
                   max={250}
-                  value={rows}
-                  onChange={(e) => setRows(Number(e.target.value))}
+                  value={gridSize}
+                  onChange={(e) => setGridSize(Number(e.target.value))}
                   className="range-input"
-                  aria-label="Number of grid rows"
-                />
-              </label>
-              <label className="field-label">
-                <span className="field-label-header">
-                  Columns <span className="field-value">{cols}</span>
-                </span>
-                <input
-                  type="range"
-                  min={5}
-                  max={250}
-                  value={cols}
-                  onChange={(e) => setCols(Number(e.target.value))}
-                  className="range-input"
-                  aria-label="Number of grid columns"
+                  aria-label="Grid size (columns × rows, maintaining image aspect ratio)"
                 />
               </label>
               <label className="field-label">

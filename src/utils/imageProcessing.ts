@@ -94,8 +94,9 @@ export function processImage(
       })
 
       // Build SVG: merge consecutive same-colour cells per row into wider rects
+      // width/height give the SVG intrinsic pixel dimensions so <img> renders at non-zero size
       const parts: string[] = [
-        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${cols} ${rows}" shape-rendering="crispEdges">`,
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${cols} ${rows}" width="${cols}" height="${rows}" shape-rendering="crispEdges">`,
       ]
       for (let row = 0; row < rows; row++) {
         let spanStart = 0
