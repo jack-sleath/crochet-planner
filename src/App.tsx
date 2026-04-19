@@ -9,19 +9,17 @@ export function App() {
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [rows, setRows] = useState(10)
   const [cols, setCols] = useState(10)
-  const [maxColors, setMaxColors] = useState(16)
+  const [maxColors, setMaxColors] = useState(8)
   const [gridVisible, setGridVisible] = useState(true)
   const [processedUrl, setProcessedUrl] = useState<string | null>(null)
 
-  function clamp(n: number, min: number, max: number) {
-    return Math.max(min, Math.min(max, n))
-  }
-
   useEffect(() => {
     if (!imageUrl) { setProcessedUrl(null); return }
+    let cancelled = false
     processImage(imageUrl, cols, rows, maxColors)
-      .then(setProcessedUrl)
+      .then((url) => { if (!cancelled) setProcessedUrl(url) })
       .catch(() => {})
+    return () => { cancelled = true }
   }, [imageUrl, cols, rows, maxColors])
 
   return (
@@ -40,38 +38,44 @@ export function App() {
             <section aria-label="Grid settings">
               <h2>Grid</h2>
               <label className="field-label">
-                Rows
+                <span className="field-label-header">
+                  Rows <span className="field-value">{rows}</span>
+                </span>
                 <input
-                  type="number"
-                  min={1}
-                  max={100}
+                  type="range"
+                  min={5}
+                  max={250}
                   value={rows}
-                  onChange={(e) => setRows(clamp(Number(e.target.value), 1, 100))}
-                  className="number-input"
+                  onChange={(e) => setRows(Number(e.target.value))}
+                  className="range-input"
                   aria-label="Number of grid rows"
                 />
               </label>
               <label className="field-label">
-                Columns
+                <span className="field-label-header">
+                  Columns <span className="field-value">{cols}</span>
+                </span>
                 <input
-                  type="number"
-                  min={1}
-                  max={100}
+                  type="range"
+                  min={5}
+                  max={250}
                   value={cols}
-                  onChange={(e) => setCols(clamp(Number(e.target.value), 1, 100))}
-                  className="number-input"
+                  onChange={(e) => setCols(Number(e.target.value))}
+                  className="range-input"
                   aria-label="Number of grid columns"
                 />
               </label>
               <label className="field-label">
-                Max colours
+                <span className="field-label-header">
+                  Max colours <span className="field-value">{maxColors}</span>
+                </span>
                 <input
-                  type="number"
+                  type="range"
                   min={2}
-                  max={64}
+                  max={16}
                   value={maxColors}
-                  onChange={(e) => setMaxColors(clamp(Number(e.target.value), 2, 64))}
-                  className="number-input"
+                  onChange={(e) => setMaxColors(Number(e.target.value))}
+                  className="range-input"
                   aria-label="Maximum number of colours in the pixelated image"
                 />
               </label>
@@ -91,9 +95,9 @@ export function App() {
         </aside>
 
         <div className="canvas-area">
-          {processedUrl ? (
+          {imageUrl ? (
             <GridOverlay
-              imageUrl={processedUrl}
+              imageUrl={processedUrl ?? imageUrl}
               rows={rows}
               cols={cols}
               visible={gridVisible}
