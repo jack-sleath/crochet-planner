@@ -93,10 +93,12 @@ export function processImage(
         return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
       })
 
-      // Build SVG: merge consecutive same-colour cells per row into wider rects
-      // width/height give the SVG intrinsic pixel dimensions so <img> renders at non-zero size
+      // Build SVG: merge consecutive same-colour cells per row into wider rects.
+      // Use the original image's pixel dimensions as intrinsic SVG size so that
+      // CSS max-width/max-height scale it correctly — without this the SVG renders
+      // at cols×rows CSS pixels (e.g. 77×66) and appears as a tiny square.
       const parts: string[] = [
-        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${cols} ${rows}" width="${cols}" height="${rows}" shape-rendering="crispEdges">`,
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${cols} ${rows}" width="${img.naturalWidth}" height="${img.naturalHeight}" shape-rendering="crispEdges">`,
       ]
       for (let row = 0; row < rows; row++) {
         let spanStart = 0
