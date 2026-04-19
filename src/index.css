@@ -247,6 +247,7 @@ body {
   max-height: calc(100vh - 140px);
   width: auto;
   height: auto;
+  image-rendering: pixelated;
 }
 
 .grid-canvas {

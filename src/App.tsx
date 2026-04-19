@@ -1,18 +1,28 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ImageUpload } from './components/ImageUpload'
 import { GridOverlay } from './components/GridOverlay'
 import { ColourPalette } from './components/ColourPalette'
+import { processImage } from './utils/imageProcessing'
 import './index.css'
 
 export function App() {
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [rows, setRows] = useState(10)
   const [cols, setCols] = useState(10)
+  const [maxColors, setMaxColors] = useState(16)
   const [gridVisible, setGridVisible] = useState(true)
+  const [processedUrl, setProcessedUrl] = useState<string | null>(null)
 
   function clamp(n: number, min: number, max: number) {
     return Math.max(min, Math.min(max, n))
   }
+
+  useEffect(() => {
+    if (!imageUrl) { setProcessedUrl(null); return }
+    processImage(imageUrl, cols, rows, maxColors)
+      .then(setProcessedUrl)
+      .catch(() => {})
+  }, [imageUrl, cols, rows, maxColors])
 
   return (
     <div className="app">
@@ -53,6 +63,18 @@ export function App() {
                   aria-label="Number of grid columns"
                 />
               </label>
+              <label className="field-label">
+                Max colours
+                <input
+                  type="number"
+                  min={2}
+                  max={64}
+                  value={maxColors}
+                  onChange={(e) => setMaxColors(clamp(Number(e.target.value), 2, 64))}
+                  className="number-input"
+                  aria-label="Maximum number of colours in the pixelated image"
+                />
+              </label>
               <label className="toggle-label">
                 <input
                   type="checkbox"
@@ -69,9 +91,9 @@ export function App() {
         </aside>
 
         <div className="canvas-area">
-          {imageUrl ? (
+          {processedUrl ? (
             <GridOverlay
-              imageUrl={imageUrl}
+              imageUrl={processedUrl}
               rows={rows}
               cols={cols}
               visible={gridVisible}
