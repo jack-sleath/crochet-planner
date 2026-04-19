@@ -62,16 +62,25 @@ export function GridOverlay({ imageUrl, rows, cols, visible }: Props) {
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
 
-    for (let row = 0; row < r; row++) {
-      for (let col = 0; col < c; col++) {
-        const n = row * c + col + 1
-        const x = col * cellW + cellW / 2
-        const y = row * cellH + cellH / 2
-        ctx.fillStyle = 'rgba(0,0,0,0.55)'
-        ctx.fillText(String(n), x + 1, y + 1)
-        ctx.fillStyle = 'rgba(255,255,255,0.95)'
-        ctx.fillText(String(n), x, y)
-      }
+    function label(text: string, x: number, y: number) {
+      ctx!.fillStyle = 'rgba(0,0,0,0.55)'
+      ctx!.fillText(text, x + 1, y + 1)
+      ctx!.fillStyle = 'rgba(255,255,255,0.95)'
+      ctx!.fillText(text, x, y)
+    }
+
+    // Top and bottom rows: column numbers
+    for (let col = 0; col < c; col++) {
+      const x = col * cellW + cellW / 2
+      label(String(col + 1), x, cellH / 2)
+      label(String(col + 1), x, (r - 1) * cellH + cellH / 2)
+    }
+
+    // Left and right columns: row numbers (skip corners already covered above)
+    for (let row = 1; row < r - 1; row++) {
+      const y = row * cellH + cellH / 2
+      label(String(row + 1), cellW / 2, y)
+      label(String(row + 1), (c - 1) * cellW + cellW / 2, y)
     }
   }
 
