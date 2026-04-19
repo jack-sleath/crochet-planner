@@ -87,13 +87,31 @@ export function processImage(
 
       const palette = kMeans(pixels, maxColors)
 
-      for (let i = 0; i < data.length; i += 4) {
-        const c = palette[nearestIndex([data[i], data[i + 1], data[i + 2]], palette)]
-        data[i] = c[0]; data[i + 1] = c[1]; data[i + 2] = c[2]
-      }
-      ctx.putImageData(imageData, 0, 0)
+      // Map each pixel to its nearest palette colour and store as hex
+      const hexGrid: string[] = pixels.map(p => {
+        const [r, g, b] = palette[nearestIndex(p, palette)]
+        return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
+      })
 
-      resolve(canvas.toDataURL())
+      // Build SVG: merge consecutive same-colour cells per row into wider rects
+      const parts: string[] = [
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${cols} ${rows}" shape-rendering="crispEdges">`,
+      ]
+      for (let row = 0; row < rows; row++) {
+        let spanStart = 0
+        let spanColor = hexGrid[row * cols]
+        for (let col = 1; col <= cols; col++) {
+          const hex = col < cols ? hexGrid[row * cols + col] : ''
+          if (hex !== spanColor) {
+            parts.push(`<rect x="${spanStart}" y="${row}" width="${col - spanStart}" height="1" fill="${spanColor}"/>`)
+            spanStart = col
+            spanColor = hex
+          }
+        }
+      }
+      parts.push('</svg>')
+
+      resolve(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(parts.join(''))}`)
     }
     img.onerror = () => reject(new Error('Failed to load image'))
     img.src = imageUrl
