@@ -30,11 +30,19 @@ export function App() {
   useEffect(() => {
     if (!imageUrl || aspectRatio === null) { setProcessedUrl(null); return }
     let cancelled = false
-    processImage(imageUrl, cols, rows, maxColors, palette)
+    processImage(imageUrl, cols, rows, maxColors, palette, gridVisible)
       .then((url) => { if (!cancelled) setProcessedUrl(url) })
       .catch(() => {})
     return () => { cancelled = true }
-  }, [imageUrl, aspectRatio, cols, rows, maxColors, palette])
+  }, [imageUrl, aspectRatio, cols, rows, maxColors, palette, gridVisible])
+
+  function savePattern() {
+    if (!processedUrl) return
+    const a = document.createElement('a')
+    a.href = processedUrl
+    a.download = 'crochet-pattern.svg'
+    a.click()
+  }
 
   return (
     <div className="app">
@@ -94,6 +102,15 @@ export function App() {
                 />
                 Show grid
               </label>
+              {processedUrl && (
+                <button
+                  className="btn btn-secondary save-btn"
+                  onClick={savePattern}
+                  aria-label="Save pattern as SVG"
+                >
+                  Save pattern
+                </button>
+              )}
             </section>
           )}
 
@@ -102,12 +119,7 @@ export function App() {
 
         <div className="canvas-area">
           {imageUrl ? (
-            <GridOverlay
-              imageUrl={processedUrl ?? imageUrl}
-              rows={rows}
-              cols={cols}
-              visible={gridVisible}
-            />
+            <GridOverlay imageUrl={processedUrl ?? imageUrl} />
           ) : (
             <div className="canvas-placeholder" aria-label="Image preview area">
               <span aria-hidden="true" style={{ fontSize: '3rem' }}>🧶</span>

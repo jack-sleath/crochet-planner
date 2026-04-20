@@ -25,7 +25,6 @@ function nearestIndex(pixel: RGB, palette: RGB[]): number {
 function kMeans(pixels: RGB[], k: number): RGB[] {
   const clampedK = Math.min(k, pixels.length)
 
-  // K-means++ initialisation
   const centroids: RGB[] = [[...pixels[Math.floor(Math.random() * pixels.length)]]]
   while (centroids.length < clampedK) {
     const dists = pixels.map(p => Math.min(...centroids.map(c => colorDist(p, c))))
@@ -43,7 +42,6 @@ function kMeans(pixels: RGB[], k: number): RGB[] {
     centroids.push([...chosen])
   }
 
-  // Iterate until stable (max 12 rounds)
   for (let iter = 0; iter < 12; iter++) {
     const sums: [number, number, number, number][] = Array.from({ length: clampedK }, () => [0, 0, 0, 0])
     for (const p of pixels) {
@@ -74,11 +72,11 @@ export function processImage(
   rows: number,
   maxColors: number,
   userPalette: string[] = [],
+  showGrid = false,
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image()
     img.onload = () => {
-      // Downsample to cols × rows (one pixel per grid cell)
       const canvas = document.createElement('canvas')
       canvas.width = cols
       canvas.height = rows
@@ -94,24 +92,20 @@ export function processImage(
         pixels.push([data[i], data[i + 1], data[i + 2]])
       }
 
-      // Use the user's saved palette directly if they have one, otherwise run k-means
       const palette = userPalette.length > 0
         ? userPalette.map(hexToRgb)
         : kMeans(pixels, maxColors)
 
-      // Map each pixel to its nearest palette colour and store as hex
       const hexGrid: string[] = pixels.map(p => {
         const [r, g, b] = palette[nearestIndex(p, palette)]
         return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
       })
 
-      // Build SVG: merge consecutive same-colour cells per row into wider rects.
-      // Use the original image's pixel dimensions as intrinsic SVG size so that
-      // CSS max-width/max-height scale it correctly — without this the SVG renders
-      // at cols×rows CSS pixels (e.g. 77×66) and appears as a tiny square.
       const parts: string[] = [
         `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${cols} ${rows}" width="${img.naturalWidth}" height="${img.naturalHeight}" shape-rendering="crispEdges">`,
       ]
+
+      // Pixel colour rects (run-length encoded per row)
       for (let row = 0; row < rows; row++) {
         let spanStart = 0
         let spanColor = hexGrid[row * cols]
@@ -124,8 +118,38 @@ export function processImage(
           }
         }
       }
-      parts.push('</svg>')
 
+      if (showGrid) {
+        // Grid lines — single path covering all cell boundaries
+        let d = ''
+        for (let col = 0; col <= cols; col++) d += `M${col},0V${rows}`
+        for (let row = 0; row <= rows; row++) d += `M0,${row}H${cols}`
+        parts.push(`<path d="${d}" stroke="rgba(255,255,255,0.65)" stroke-width="0.04" fill="none"/>`)
+
+        // Edge numbers — grouped to share style attributes
+        parts.push(
+          `<g font-family="system-ui,sans-serif" font-weight="bold" font-size="0.38"` +
+          ` text-anchor="middle" dominant-baseline="middle"` +
+          ` stroke="rgba(0,0,0,0.55)" stroke-width="0.07" paint-order="stroke" fill="rgba(255,255,255,0.95)">`
+        )
+        // Top + bottom: column numbers
+        for (let col = 0; col < cols; col++) {
+          const x = col + 0.5
+          const n = col + 1
+          parts.push(`<text x="${x}" y="0.5">${n}</text>`)
+          parts.push(`<text x="${x}" y="${rows - 0.5}">${n}</text>`)
+        }
+        // Left + right: row numbers (skip corners already covered above)
+        for (let row = 1; row < rows - 1; row++) {
+          const y = row + 0.5
+          const n = row + 1
+          parts.push(`<text x="0.5" y="${y}">${n}</text>`)
+          parts.push(`<text x="${cols - 0.5}" y="${y}">${n}</text>`)
+        }
+        parts.push('</g>')
+      }
+
+      parts.push('</svg>')
       resolve(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(parts.join(''))}`)
     }
     img.onerror = () => reject(new Error('Failed to load image'))
