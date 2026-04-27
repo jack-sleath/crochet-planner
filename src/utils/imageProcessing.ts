@@ -144,13 +144,6 @@ export function processImage(
           parts.push(`<text x="${x}" y="0.5">${n}</text>`)
           parts.push(`<text x="${x}" y="${rows - 0.5}">${n}</text>`)
         }
-        // Left + right: row numbers (skip corners already covered above)
-        for (let row = 1; row < rows - 1; row++) {
-          const y = row + 0.5
-          const n = row + 1
-          parts.push(`<text x="0.5" y="${y}">${n}</text>`)
-          parts.push(`<text x="${cols - 0.5}" y="${y}">${n}</text>`)
-        }
         // Stitch numbers on cells touching colour changes (plus first/last of each row)
         for (const { x, y, n } of stitchLabels) {
           parts.push(`<text x="${x}" y="${y}">${n}</text>`)
