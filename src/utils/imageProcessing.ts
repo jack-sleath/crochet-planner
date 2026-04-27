@@ -105,8 +105,9 @@ export function processImage(
         `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${cols} ${rows}" width="${img.naturalWidth}" height="${img.naturalHeight}" shape-rendering="crispEdges">`,
       ]
 
-      // Pixel colour rects (run-length encoded per row); collect run-length labels
-      const runLabels: Array<{ x: number; y: number; n: number }> = []
+      // Pixel colour rects (run-length encoded per row); collect stitch-number labels
+      // on the first and last cell of every run so colour-change boundaries are numbered.
+      const stitchLabels: Array<{ x: number; y: number; n: number }> = []
       for (let row = 0; row < rows; row++) {
         let spanStart = 0
         let spanColor = hexGrid[row * cols]
@@ -115,7 +116,8 @@ export function processImage(
           if (hex !== spanColor) {
             const length = col - spanStart
             parts.push(`<rect x="${spanStart}" y="${row}" width="${length}" height="1" fill="${spanColor}"/>`)
-            if (length >= 2) runLabels.push({ x: spanStart + length / 2, y: row + 0.5, n: length })
+            stitchLabels.push({ x: spanStart + 0.5, y: row + 0.5, n: spanStart + 1 })
+            if (length > 1) stitchLabels.push({ x: col - 0.5, y: row + 0.5, n: col })
             spanStart = col
             spanColor = hex
           }
@@ -149,8 +151,8 @@ export function processImage(
           parts.push(`<text x="0.5" y="${y}">${n}</text>`)
           parts.push(`<text x="${cols - 0.5}" y="${y}">${n}</text>`)
         }
-        // Run-length labels at colour changes
-        for (const { x, y, n } of runLabels) {
+        // Stitch numbers on cells touching colour changes (plus first/last of each row)
+        for (const { x, y, n } of stitchLabels) {
           parts.push(`<text x="${x}" y="${y}">${n}</text>`)
         }
         parts.push('</g>')
