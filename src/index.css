@@ -233,23 +233,58 @@ body {
 
 /* ── Image + canvas ──────────────────────────────── */
 
-.image-container {
+.image-viewport {
   position: relative;
-  display: inline-block;
-  max-width: 100%;
-  box-shadow: var(--shadow);
-  border-radius: var(--radius);
+  width: 100%;
+  height: calc(100vh - 140px);
+  max-height: calc(100vh - 140px);
   overflow: hidden;
-  line-height: 0;
+  border-radius: var(--radius);
+  background: var(--cream-dark);
+  box-shadow: var(--shadow);
+  cursor: grab;
+  user-select: none;
+}
+
+.image-viewport:active { cursor: grabbing; }
+
+.image-transform {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: 50% 50%;
+  will-change: transform;
 }
 
 .reference-image {
   display: block;
   max-width: 100%;
-  max-height: calc(100vh - 140px);
+  max-height: 100%;
   width: auto;
   height: auto;
+  pointer-events: none;
+  -webkit-user-drag: none;
 }
+
+.zoom-reset-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.35rem 0.7rem;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+
+.zoom-reset-btn:hover { background: white; }
+.zoom-reset-btn:focus-visible { outline: 2px solid var(--brown); outline-offset: 2px; }
 
 .grid-canvas {
   display: none;
@@ -563,7 +598,8 @@ body {
     padding: 1rem;
   }
 
-  .reference-image {
-    max-height: none;
+  .image-viewport {
+    height: calc(100vh - 220px);
+    max-height: calc(100vh - 220px);
   }
 }
