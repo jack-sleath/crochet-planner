@@ -105,14 +105,19 @@ export function processImage(
         `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${cols} ${rows}" width="${img.naturalWidth}" height="${img.naturalHeight}" shape-rendering="crispEdges">`,
       ]
 
-      // Pixel colour rects (run-length encoded per row)
+      // Pixel colour rects (run-length encoded per row); collect stitch-number labels
+      // on the first and last cell of every run so colour-change boundaries are numbered.
+      const stitchLabels: Array<{ x: number; y: number; n: number }> = []
       for (let row = 0; row < rows; row++) {
         let spanStart = 0
         let spanColor = hexGrid[row * cols]
         for (let col = 1; col <= cols; col++) {
           const hex = col < cols ? hexGrid[row * cols + col] : ''
           if (hex !== spanColor) {
-            parts.push(`<rect x="${spanStart}" y="${row}" width="${col - spanStart}" height="1" fill="${spanColor}"/>`)
+            const length = col - spanStart
+            parts.push(`<rect x="${spanStart}" y="${row}" width="${length}" height="1" fill="${spanColor}"/>`)
+            stitchLabels.push({ x: spanStart + 0.5, y: row + 0.5, n: spanStart + 1 })
+            if (length > 1) stitchLabels.push({ x: col - 0.5, y: row + 0.5, n: col })
             spanStart = col
             spanColor = hex
           }
@@ -139,12 +144,9 @@ export function processImage(
           parts.push(`<text x="${x}" y="0.5">${n}</text>`)
           parts.push(`<text x="${x}" y="${rows - 0.5}">${n}</text>`)
         }
-        // Left + right: row numbers (skip corners already covered above)
-        for (let row = 1; row < rows - 1; row++) {
-          const y = row + 0.5
-          const n = row + 1
-          parts.push(`<text x="0.5" y="${y}">${n}</text>`)
-          parts.push(`<text x="${cols - 0.5}" y="${y}">${n}</text>`)
+        // Stitch numbers on cells touching colour changes (plus first/last of each row)
+        for (const { x, y, n } of stitchLabels) {
+          parts.push(`<text x="${x}" y="${y}">${n}</text>`)
         }
         parts.push('</g>')
       }
